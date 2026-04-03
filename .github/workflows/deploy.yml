@@ -3,7 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - main          # triggers the pipeline on every push to main
+      - main          # triggers the pipeline on every push to main done
 
 permissions:
   contents: read
