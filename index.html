@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pirate DevOps — CI/CD with One Piece</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Cinzel:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy:    #0a0f1e;
+      --deep:    #060b15;
+      --gold:    #c8922a;
+      --gold2:   #f0c060;
+      --red:     #c0271d;
+      --cream:   #f5e6c8;
+      --fog:     #1a2540;
+      --muted:   #8899bb;
+      --white:   #fff8ee;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--deep);
+      color: var(--cream);
+      font-family: 'Crimson Pro', Georgia, serif;
+      font-size: 18px;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ─── STARS BACKGROUND ─── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(1px 1px at 10% 20%, rgba(255,248,238,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 30% 60%, rgba(255,248,238,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 55% 10%, rgba(255,248,238,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 75% 80%, rgba(255,248,238,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 90% 40%, rgba(255,248,238,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 20% 90%, rgba(255,248,238,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 65% 50%, rgba(255,248,238,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 45% 35%, rgba(255,248,238,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 85% 15%, rgba(255,248,238,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 5%  75%, rgba(255,248,238,0.6) 0%, transparent 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── OCEAN WAVES ─── */
+    .ocean {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 180px;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+      opacity: 0.18;
+    }
+    .wave {
+      position: absolute;
+      bottom: 0;
+      width: 200%;
+      height: 100px;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100'%3E%3Cpath fill='%231a4a8a' d='M0,50 C360,100 720,0 1080,50 C1260,75 1380,60 1440,50 L1440,100 L0,100Z'/%3E%3C/svg%3E") repeat-x;
+      animation: wave-move 8s linear infinite;
+    }
+    .wave:nth-child(2) {
+      bottom: 10px;
+      opacity: 0.6;
+      animation-duration: 12s;
+      animation-direction: reverse;
+    }
+    @keyframes wave-move {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 3rem;
+      background: linear-gradient(to bottom, rgba(6,11,21,0.97), transparent);
+      border-bottom: 1px solid rgba(200,146,42,0.15);
+    }
+    .nav-logo {
+      font-family: 'Pirata One', cursive;
+      font-size: 1.6rem;
+      color: var(--gold);
+      letter-spacing: 2px;
+      text-shadow: 0 0 20px rgba(200,146,42,0.5);
+    }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      font-family: 'Cinzel', serif;
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      color: var(--muted);
+      text-decoration: none;
+      text-transform: uppercase;
+      transition: color 0.3s;
+    }
+    .nav-links a:hover { color: var(--gold2); }
+
+    /* ─── HERO ─── */
+    .hero {
+      position: relative;
+      z-index: 2;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 8rem 2rem 4rem;
+    }
+
+    .jolly-roger {
+      font-size: 6rem;
+      margin-bottom: 1.5rem;
+      animation: float 4s ease-in-out infinite;
+      filter: drop-shadow(0 0 30px rgba(200,146,42,0.4));
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50%       { transform: translateY(-18px) rotate(2deg); }
+    }
+
+    .hero-subtitle {
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
+      letter-spacing: 5px;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.3s forwards;
+    }
+
+    .hero-title {
+      font-family: 'Pirata One', cursive;
+      font-size: clamp(3rem, 9vw, 7rem);
+      line-height: 1;
+      color: var(--white);
+      text-shadow:
+        0 0 40px rgba(200,146,42,0.3),
+        0 4px 0 rgba(0,0,0,0.5);
+      margin-bottom: 0.4rem;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.5s forwards;
+    }
+    .hero-title span { color: var(--gold); }
+
+    .hero-tagline {
+      font-style: italic;
+      font-size: 1.2rem;
+      color: var(--muted);
+      max-width: 560px;
+      margin: 1.2rem auto 2.5rem;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.7s forwards;
+    }
+
+    .hero-cta {
+      display: inline-block;
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--navy);
+      background: linear-gradient(135deg, var(--gold), var(--gold2));
+      padding: 0.9rem 2.5rem;
+      border-radius: 2px;
+      text-decoration: none;
+      box-shadow: 0 4px 30px rgba(200,146,42,0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
+      opacity: 0;
+      animation: fadeUp 0.8s 0.9s forwards;
+    }
+    .hero-cta:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 40px rgba(200,146,42,0.6);
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── DIVIDER ─── */
+    .divider {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 1rem 0;
+      color: var(--gold);
+      font-size: 1.4rem;
+      letter-spacing: 16px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      display: inline-block;
+      width: 80px;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--gold));
+      vertical-align: middle;
+      margin: 0 1rem;
+    }
+    .divider::after { background: linear-gradient(to left, transparent, var(--gold)); }
+
+    /* ─── SECTIONS ─── */
+    section {
+      position: relative;
+      z-index: 2;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 4rem 2rem;
+    }
+
+    .section-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.72rem;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.6rem;
+    }
+    .section-title {
+      font-family: 'Pirata One', cursive;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      color: var(--white);
+      margin-bottom: 1rem;
+      line-height: 1.1;
+    }
+    .section-body {
+      color: var(--muted);
+      max-width: 620px;
+      font-size: 1.05rem;
+    }
+
+    /* ─── CREW CARDS (pipeline steps) ─── */
+    .crew-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+
+    .crew-card {
+      background: linear-gradient(145deg, rgba(26,37,64,0.8), rgba(10,15,30,0.9));
+      border: 1px solid rgba(200,146,42,0.2);
+      border-radius: 4px;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+    }
+    .crew-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .crew-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(200,146,42,0.5);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.4), 0 0 30px rgba(200,146,42,0.1);
+    }
+    .crew-card:hover::before { opacity: 1; }
+
+    .card-icon { font-size: 2.4rem; margin-bottom: 1rem; }
+    .card-step {
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      letter-spacing: 3px;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+    .card-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.05rem;
+      color: var(--white);
+      margin-bottom: 0.8rem;
+      font-weight: 700;
+    }
+    .card-body { font-size: 0.95rem; color: var(--muted); }
+
+    /* ─── PIPELINE FLOW ─── */
+    .pipeline {
+      background: rgba(10,15,30,0.8);
+      border: 1px solid rgba(200,146,42,0.15);
+      border-radius: 4px;
+      padding: 2.5rem;
+      margin-top: 3rem;
+      font-family: 'Crimson Pro', serif;
+    }
+    .pipeline-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+    .pipeline-flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .p-node {
+      background: rgba(26,37,64,0.9);
+      border: 1px solid rgba(200,146,42,0.3);
+      border-radius: 3px;
+      padding: 0.7rem 1.2rem;
+      text-align: center;
+      min-width: 120px;
+    }
+    .p-node-icon { font-size: 1.4rem; display: block; margin-bottom: 0.2rem; }
+    .p-node-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      letter-spacing: 1px;
+      color: var(--gold2);
+      text-transform: uppercase;
+    }
+    .p-arrow {
+      color: var(--gold);
+      font-size: 1.4rem;
+      opacity: 0.6;
+    }
+
+    /* ─── CODE BLOCK ─── */
+    .code-wrap {
+      margin-top: 3rem;
+      background: #050912;
+      border: 1px solid rgba(200,146,42,0.2);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.8rem 1.5rem;
+      background: rgba(26,37,64,0.6);
+      border-bottom: 1px solid rgba(200,146,42,0.15);
+    }
+    .code-dots { display: flex; gap: 6px; }
+    .code-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+    }
+    .dot-r { background: #c0271d; }
+    .dot-y { background: #c8922a; }
+    .dot-g { background: #2a7a3b; }
+    .code-filename {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      color: var(--muted);
+    }
+    pre {
+      padding: 1.8rem;
+      overflow-x: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      line-height: 1.8;
+      color: #a8c0e0;
+    }
+    .y  { color: var(--gold2); }
+    .g  { color: #5dba72; }
+    .b  { color: #6ab0f5; }
+    .r  { color: #e08080; }
+    .c  { color: #888; font-style: italic; }
+
+    /* ─── DEVIL FRUIT FACTS ─── */
+    .fruit-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.2rem;
+      margin-top: 3rem;
+    }
+    .fruit-item {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      padding: 1.2rem;
+      background: rgba(26,37,64,0.5);
+      border-left: 3px solid var(--gold);
+      border-radius: 0 3px 3px 0;
+    }
+    .fruit-icon { font-size: 1.6rem; flex-shrink: 0; }
+    .fruit-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.72rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--gold2);
+      margin-bottom: 0.3rem;
+    }
+    .fruit-desc { font-size: 0.92rem; color: var(--muted); }
+
+    /* ─── QUOTE BANNER ─── */
+    .quote-banner {
+      position: relative;
+      z-index: 2;
+      background: linear-gradient(135deg, rgba(192,39,29,0.12), rgba(200,146,42,0.08));
+      border-top: 1px solid rgba(200,146,42,0.15);
+      border-bottom: 1px solid rgba(200,146,42,0.15);
+      padding: 4rem 2rem;
+      text-align: center;
+      margin: 2rem 0;
+    }
+    .quote-text {
+      font-family: 'Pirata One', cursive;
+      font-size: clamp(1.4rem, 4vw, 2.4rem);
+      color: var(--white);
+      max-width: 800px;
+      margin: 0 auto 1rem;
+      line-height: 1.4;
+    }
+    .quote-attr {
+      font-style: italic;
+      color: var(--gold);
+      font-size: 1rem;
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 3rem 2rem 6rem;
+      border-top: 1px solid rgba(200,146,42,0.1);
+    }
+    .footer-logo {
+      font-family: 'Pirata One', cursive;
+      font-size: 2rem;
+      color: var(--gold);
+      margin-bottom: 0.8rem;
+    }
+    .footer-text { font-size: 0.9rem; color: var(--muted); }
+    .footer-flag { font-size: 2rem; margin-bottom: 0.5rem; }
+
+    /* ─── SCROLL REVEAL ─── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ocean waves -->
+  <div class="ocean">
+    <div class="wave"></div>
+    <div class="wave"></div>
+  </div>
+
+  <!-- Navigation -->
+  <nav>
+    <div class="nav-logo">☠ Pirate DevOps</div>
+    <ul class="nav-links">
+      <li><a href="#pipeline">Pipeline</a></li>
+      <li><a href="#workflow">Workflow</a></li>
+      <li><a href="#crew">Crew</a></li>
+    </ul>
+  </nav>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="jolly-roger">☠</div>
+    <p class="hero-subtitle">The Grand Line of Automation</p>
+    <h1 class="hero-title">CI/CD with<br><span>One Piece</span></h1>
+    <p class="hero-tagline">
+      "Set sail your code to the seas of automation — deploy with the will of a Pirate King."
+    </p>
+    <a href="#pipeline" class="hero-cta">Begin the Voyage</a>
+  </div>
+
+  <div class="divider">⚓</div>
+
+  <!-- What is CI/CD -->
+  <section id="pipeline" class="reveal">
+    <p class="section-label">The Grand Line</p>
+    <h2 class="section-title">What is CI/CD?</h2>
+    <p class="section-body">
+      Just as Luffy assembled his crew and set sail across the Grand Line — 
+      CI/CD is the voyage that takes your code from idea to the open seas of production, 
+      automatically and fearlessly. <strong>Continuous Integration</strong> merges your crew's 
+      work together. <strong>Continuous Deployment</strong> sets it live on the world stage.
+    </p>
+
+    <!-- Pipeline flow -->
+    <div class="pipeline">
+      <p class="pipeline-title">⚓ The Thousand Sunny Pipeline</p>
+      <div class="pipeline-flow">
+        <div class="p-node">
+          <span class="p-node-icon">✍️</span>
+          <span class="p-node-label">Code Push</span>
+        </div>
+        <span class="p-arrow">→</span>
+        <div class="p-node">
+          <span class="p-node-icon">🔍</span>
+          <span class="p-node-label">Checkout</span>
+        </div>
+        <span class="p-arrow">→</span>
+        <div class="p-node">
+          <span class="p-node-icon">⚙️</span>
+          <span class="p-node-label">Build</span>
+        </div>
+        <span class="p-arrow">→</span>
+        <div class="p-node">
+          <span class="p-node-icon">🧪</span>
+          <span class="p-node-label">Test</span>
+        </div>
+        <span class="p-arrow">→</span>
+        <div class="p-node">
+          <span class="p-node-icon">🚀</span>
+          <span class="p-node-label">Deploy</span>
+        </div>
+        <span class="p-arrow">→</span>
+        <div class="p-node">
+          <span class="p-node-icon">🌊</span>
+          <span class="p-node-label">Live!</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Crew Section -->
+  <section id="crew" class="reveal">
+    <p class="section-label">The Straw Hat Crew</p>
+    <h2 class="section-title">Every Step Has a Nakama</h2>
+    <p class="section-body">
+      Each stage of your pipeline is like a crew member — 
+      unique, essential, and stronger together.
+    </p>
+
+    <div class="crew-grid">
+      <div class="crew-card">
+        <div class="card-icon">🗺️</div>
+        <p class="card-step">Step 01</p>
+        <h3 class="card-title">Create Repository</h3>
+        <p class="card-body">Like Nami charting the course — your GitHub repo is the map that guides every deployment voyage.</p>
+      </div>
+      <div class="crew-card">
+        <div class="card-icon">📄</div>
+        <p class="card-step">Step 02</p>
+        <h3 class="card-title">Write index.html</h3>
+        <p class="card-body">Usopp builds what others dare not. Your index.html is the ship — every line of code is a plank of the Thousand Sunny.</p>
+      </div>
+      <div class="crew-card">
+        <div class="card-icon">⚙️</div>
+        <p class="card-step">Step 03</p>
+        <h3 class="card-title">GitHub Actions Workflow</h3>
+        <p class="card-body">Robin deciphers the Poneglyphs. Your deploy.yml deciphers how to get code to the world — step by step.</p>
+      </div>
+      <div class="crew-card">
+        <div class="card-icon">🔄</div>
+        <p class="card-step">Step 04</p>
+        <h3 class="card-title">Checkout Code</h3>
+        <p class="card-body">Zoro always finds his way (eventually). <code>actions/checkout</code> pulls the latest code from your ship's log.</p>
+      </div>
+      <div class="crew-card">
+        <div class="card-icon">🌐</div>
+        <p class="card-step">Step 05</p>
+        <h3 class="card-title">Enable GitHub Pages</h3>
+        <p class="card-body">Franky built the Thousand Sunny. GitHub Pages is your vessel — set the source to GitHub Actions and let her sail.</p>
+      </div>
+      <div class="crew-card">
+        <div class="card-icon">🚀</div>
+        <p class="card-step">Step 06</p>
+        <h3 class="card-title">Push & Deploy</h3>
+        <p class="card-body">Luffy punches straight for his goal. A single git push triggers your whole pipeline — no hesitation, just results.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quote -->
+  <div class="quote-banner">
+    <p class="quote-text">"People's dreams... have no end!"</p>
+    <p class="quote-attr">— Edward Newgate (Whitebeard) &nbsp;·&nbsp; and your CI/CD pipeline</p>
+  </div>
+
+  <!-- Workflow Code -->
+  <section id="workflow" class="reveal">
+    <p class="section-label">The Poneglyphs of Deployment</p>
+    <h2 class="section-title">The Workflow File</h2>
+    <p class="section-body">
+      Hidden in <code>.github/workflows/deploy.yml</code> — the ancient text that sets your code free every time you push to main.
+    </p>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <div class="code-dots">
+          <div class="code-dot dot-r"></div>
+          <div class="code-dot dot-y"></div>
+          <div class="code-dot dot-g"></div>
+        </div>
+        <span class="code-filename">.github/workflows/deploy.yml</span>
+        <span></span>
+      </div>
+<pre><span class="y">name</span><span class="r">:</span> Deploy to GitHub Pages
+
+<span class="c"># Triggers when you push to main — like setting sail</span>
+<span class="y">on</span><span class="r">:</span>
+  <span class="y">push</span><span class="r">:</span>
+    <span class="y">branches</span><span class="r">:</span>
+      <span class="g">- main</span>
+
+<span class="y">permissions</span><span class="r">:</span>
+  <span class="y">contents</span><span class="r">:</span> <span class="b">read</span>
+  <span class="y">pages</span><span class="r">:</span>    <span class="b">write</span>
+  <span class="y">id-token</span><span class="r">:</span> <span class="b">write</span>
+
+<span class="y">jobs</span><span class="r">:</span>
+  <span class="y">deploy</span><span class="r">:</span>
+    <span class="y">runs-on</span><span class="r">:</span> <span class="b">ubuntu-latest</span>
+    <span class="y">environment</span><span class="r">:</span>
+      <span class="y">name</span><span class="r">:</span> <span class="b">github-pages</span>
+      <span class="y">url</span><span class="r">:</span>  <span class="b">${{ steps.deployment.outputs.page_url }}</span>
+
+    <span class="y">steps</span><span class="r">:</span>
+      <span class="c"># ⚓ Zoro finds the code (eventually)</span>
+      - <span class="y">name</span><span class="r">:</span> <span class="b">Checkout code</span>
+        <span class="y">uses</span><span class="r">:</span> <span class="b">actions/checkout@v4</span>
+
+      <span class="c"># 🗺️ Nami sets the course</span>
+      - <span class="y">name</span><span class="r">:</span> <span class="b">Setup Pages</span>
+        <span class="y">uses</span><span class="r">:</span> <span class="b">actions/configure-pages@v4</span>
+
+      <span class="c"># 🎒 Pack the cargo</span>
+      - <span class="y">name</span><span class="r">:</span> <span class="b">Upload artifact</span>
+        <span class="y">uses</span><span class="r">:</span> <span class="b">actions/upload-pages-artifact@v3</span>
+        <span class="y">with</span><span class="r">:</span>
+          <span class="y">path</span><span class="r">:</span> <span class="b">'.'</span>
+
+      <span class="c"># 🚀 Luffy stretches to the finish line</span>
+      - <span class="y">name</span><span class="r">:</span> <span class="b">Deploy to GitHub Pages</span>
+        <span class="y">id</span><span class="r">:</span>   <span class="b">deployment</span>
+        <span class="y">uses</span><span class="r">:</span> <span class="b">actions/deploy-pages@v4</span></pre>
+    </div>
+  </section>
+
+  <!-- Devil Fruit Powers / Key Concepts -->
+  <section class="reveal">
+    <p class="section-label">Devil Fruit Powers</p>
+    <h2 class="section-title">Key CI/CD Concepts</h2>
+    <p class="section-body">Every pirate has a power. Every DevOps concept is a Devil Fruit waiting to be eaten.</p>
+
+    <div class="fruit-grid">
+      <div class="fruit-item">
+        <span class="fruit-icon">🔀</span>
+        <div>
+          <p class="fruit-label">CI — Continuous Integration</p>
+          <p class="fruit-desc">Like Luffy's crew rowing together — everyone's code merges into one, tested automatically.</p>
+        </div>
+      </div>
+      <div class="fruit-item">
+        <span class="fruit-icon">📦</span>
+        <div>
+          <p class="fruit-label">CD — Continuous Deployment</p>
+          <p class="fruit-desc">Franky's Coup de Burst — code launches to production the moment it's ready, no manual effort.</p>
+        </div>
+      </div>
+      <div class="fruit-item">
+        <span class="fruit-icon">🎯</span>
+        <div>
+          <p class="fruit-label">GitHub Actions</p>
+          <p class="fruit-desc">Sanji cooking full-course meals automatically — workflows that trigger on your command.</p>
+        </div>
+      </div>
+      <div class="fruit-item">
+        <span class="fruit-icon">🌐</span>
+        <div>
+          <p class="fruit-label">GitHub Pages</p>
+          <p class="fruit-desc">The All Blue — a free hosting island where your site lives and is reachable by the whole world.</p>
+        </div>
+      </div>
+      <div class="fruit-item">
+        <span class="fruit-icon">🌿</span>
+        <div>
+          <p class="fruit-label">Main Branch</p>
+          <p class="fruit-desc">The Red Line — the central truth. Every push here triggers your entire deployment voyage.</p>
+        </div>
+      </div>
+      <div class="fruit-item">
+        <span class="fruit-icon">✅</span>
+        <div>
+          <p class="fruit-label">Workflow Status</p>
+          <p class="fruit-desc">Green checkmark = Chopper gives you the all-clear. Your crew survived the Grand Line.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider">☠</div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-flag">🏴‍☠️</div>
+    <div class="footer-logo">Pirate DevOps</div>
+    <p class="footer-text">
+      Deployed with GitHub Actions &nbsp;·&nbsp; Hosted on GitHub Pages<br>
+      <em>"I'm going to be the King of the Pirates!"</em> — and King of Deployments.
+    </p>
+  </footer>
+
+  <script>
+    // Scroll reveal
+    const reveals = document.querySelectorAll('.reveal');
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          obs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    reveals.forEach(r => obs.observe(r));
+  </script>
+</body>
+</html>
